@@ -16,27 +16,46 @@ import torch
 import torch.backends.cudnn as cudnn
 
 FILE = Path(__file__).resolve()
-ROOT = FILE.parents[0]  # yolov5 strongsort root directory
+ROOT = FILE.parents[0]  # yolov6 strongsort root directory
 WEIGHTS = ROOT / 'weights'
 
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
-if str(ROOT / 'yolov5') not in sys.path:
-    sys.path.append(str(ROOT / 'yolov5'))  # add yolov5 ROOT to PATH
+if str(ROOT / 'YOLOv6') not in sys.path:
+    sys.path.append(str(ROOT / 'YOLOv6'))  # add YOLOv6 ROOT to PATH
 if str(ROOT / 'trackers' / 'strong_sort') not in sys.path:
     sys.path.append(str(ROOT / 'trackers' / 'strong_sort'))  # add strong_sort ROOT to PATH
 
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
+# import logging
+# from yolov5.models.common import DetectMultiBackend
+# from yolov5.utils.dataloaders import VID_FORMATS, LoadImages, LoadStreams
+# from yolov5.utils.general import (LOGGER, Profile, check_img_size, non_max_suppression, scale_boxes, check_requirements, cv2,
+#                                   check_imshow, xyxy2xywh, increment_path, strip_optimizer, colorstr, print_args, check_file)
+# from yolov5.utils.torch_utils import select_device, time_sync
+# from yolov5.utils.plots import Annotator, colors, save_one_box
+# from utils.segment.general import masks2segments, process_mask, process_mask_native
+# from trackers.multi_tracker_zoo import create_tracker
+
 import logging
-from yolov5.models.common import DetectMultiBackend
-from yolov5.utils.dataloaders import VID_FORMATS, LoadImages, LoadStreams
-from yolov5.utils.general import (LOGGER, Profile, check_img_size, non_max_suppression, scale_boxes, check_requirements, cv2,
-                                  check_imshow, xyxy2xywh, increment_path, strip_optimizer, colorstr, print_args, check_file)
-from yolov5.utils.torch_utils import select_device, time_sync
-from yolov5.utils.plots import Annotator, colors, save_one_box
+from YOLOv6.yolov6.layers.common import DetectBackend
+from YOLOv6.yolov6.data.datasets import VID_FORMATS
+from YOLOv6.yolov6.utils.nms import non_max_suppression
+from YOLOv6.yolov6.utils.events import load_yaml
+from YOLO_utils.dataloaders import LoadImages, LoadStreams
+from YOLO_utils.general import (LOGGER, Profile, check_img_size, scale_boxes, check_requirements, cv2,
+                                    check_imshow, xyxy2xywh, increment_path, strip_optimizer, colorstr, print_args, check_file)
+from YOLO_utils.torch_utils import select_device, time_sync
+from YOLO_utils.plots import Annotator, colors, save_one_box
 from utils.segment.general import masks2segments, process_mask, process_mask_native
 from trackers.multi_tracker_zoo import create_tracker
+
+
+#TODO: go through this file and check if there are any other functions that need to be imported from yolov6 (which are more hidden)
+#TODO: what about the Yaml file? Do we need to import it?
+#TODO: use variables like half, since those are not defalut input for the model like in yolov5
+#TODO: auto download weights if they are not found like for yolov5 and osnet in the WEIGHTS folder
 
 
 @torch.no_grad()
@@ -75,11 +94,11 @@ def run(
         retina_masks=False,
 ):
 
-    source = str(source)
-    save_img = not nosave and not source.endswith('.txt')  # save inference images
+    source = str(source) # convert to string
+    # old: save_img = not nosave and not source.endswith('.txt')  # save inference images # is this even used?
     is_file = Path(source).suffix[1:] in (VID_FORMATS)
-    is_url = source.lower().startswith(('rtsp://', 'rtmp://', 'http://', 'https://'))
-    webcam = source.isnumeric() or source.endswith('.txt') or (is_url and not is_file)
+    is_url = source.lower().startswith(('rtsp://', 'rtmp://', 'http://', 'https://')) # Check if source is a url
+    webcam = source.isnumeric() or source.endswith('.txt') or (is_url and not is_file) # Check if source is a webcam
     if is_url and is_file:
         source = check_file(source)  # download
 
@@ -88,18 +107,23 @@ def run(
         exp_name = yolo_weights.stem
     elif type(yolo_weights) is list and len(yolo_weights) == 1:  # single models after --yolo_weights
         exp_name = Path(yolo_weights[0]).stem
-    else:  # multiple models after --yolo_weights
+    else:  # multiple models after --yolo_weights -> TODO: what will happen if we have multiple models?
         exp_name = 'ensemble'
     exp_name = name if name else exp_name + "_" + reid_weights.stem
     save_dir = increment_path(Path(project) / exp_name, exist_ok=exist_ok)  # increment run
     (save_dir / 'tracks' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
     # Load model
-    device = select_device(device)
-    is_seg = '-seg' in str(yolo_weights)
-    model = DetectMultiBackend(yolo_weights, device=device, dnn=dnn, data=None, fp16=half)
-    stride, names, pt = model.stride, model.names, model.pt
-    imgsz = check_img_size(imgsz, s=stride)  # check image size
+    device = select_device(device) # cuda:0 will be passed
+    is_seg = '-seg' in str(yolo_weights) # TODO: remove all -seg support
+    # model = DetectMultiBackend(yolo_weights, device=device, dnn=dnn, data=None, fp16=half)
+    model = DetectBackend(yolo_weights, device=device, dnn=dnn) # load FP32 model
+    if half and device.type != 'cpu':
+        model.model.half()  # to FP16
+    # stride, names, pt = model.stride, model.names, model.pt
+    stride, names, pt = model.stride, load_yaml(yolov6_yaml)['names'], True #TODO: What would pt be in the case of yolov5?
+    imgsz = check_img_size(imgsz, s=stride)  # check image size with method taken from yolov6 Inferer class
+#------------------------------------------------------------------------------------------------------------------------------
 
     # Dataloader
     if webcam:
@@ -144,7 +168,7 @@ def run(
         # Apply NMS
         with dt[2]:
             if is_seg:
-                pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det, nm=32)
+                pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det, nm=32) #TODO: same as yolov5?
             else:
                 pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
             

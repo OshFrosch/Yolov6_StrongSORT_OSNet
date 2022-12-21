@@ -12,6 +12,9 @@ val_utils/
 # zip files
 *.zip
 
+#
+examples/
+
 # exports
 *_openvino_model
 *.torchscript
