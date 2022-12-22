@@ -120,10 +120,12 @@ def run(
     model = DetectBackend(yolo_weights, device=device, dnn=dnn) # load FP32 model
     if half and device.type != 'cpu':
         model.model.half()  # to FP16
+    else:
+        model.model.float()  # to FP32
+        half = False
     # stride, names, pt = model.stride, model.names, model.pt
-    stride, names, pt = model.stride, load_yaml(yolov6_yaml)['names'], True #TODO: What would pt be in the case of yolov5?
+    stride, names, pt = model.stride, load_yaml(yolov6_yaml)['names'], True #TODO: What would pt be in the case of yolov5? #TODO: adjust arguments
     imgsz = check_img_size(imgsz, s=stride)  # check image size with method taken from yolov6 Inferer class
-#------------------------------------------------------------------------------------------------------------------------------
 
     # Dataloader
     if webcam:
@@ -145,8 +147,12 @@ def run(
                 tracker_list[i].model.warmup()
     outputs = [None] * nr_sources
 
+    # Warmup
+    # old: model.warmup(imgsz=(1 if pt else nr_sources, 3, *imgsz))  # warmup
+    # if device.type != 'cpu':
+    #     model(torch.zeros(1, 3, *imgsz).to(device).type_as(next(model.model.parameters()))) # from YOLOv6 Inferer class
+
     # Run tracking
-    #model.warmup(imgsz=(1 if pt else nr_sources, 3, *imgsz))  # warmup
     seen, windows, dt = 0, [], (Profile(), Profile(), Profile(), Profile())
     curr_frames, prev_frames = [None] * nr_sources, [None] * nr_sources
     for frame_idx, (path, im, im0s, vid_cap, s) in enumerate(dataset):
@@ -159,20 +165,21 @@ def run(
 
         # Inference
         with dt[1]:
-            visualize = increment_path(save_dir / Path(path[0]).stem, mkdir=True) if visualize else False
-            if is_seg:
-                pred, proto = model(im, augment=augment, visualize=visualize)[:2]
-            else:
-                pred = model(im, augment=augment, visualize=visualize)
+            visualize = increment_path(save_dir / Path(path[0]).stem, mkdir=True) if visualize else False #TODO: vis is not used anymore after this, right?
+            # if is_seg:
+            #     pred, proto = model(im, augment=augment, visualize=visualize)[:2] #TODO: remove all -seg support
+            # else:
+            pred = model(im) 
 
         # Apply NMS
         with dt[2]:
-            if is_seg:
-                pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det, nm=32) #TODO: same as yolov5?
-            else:
-                pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
+            # if is_seg:
+            #     pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det, nm=32) #TODO: same as yolov5?
+            # else:
+            pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
             
 
+#------------------------------------------------------------------------------------------------------------------------------
         # Process detections
         for i, det in enumerate(pred):  # detections per image
             seen += 1
