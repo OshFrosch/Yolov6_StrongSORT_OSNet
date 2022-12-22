@@ -35,7 +35,7 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 #                                   check_imshow, xyxy2xywh, increment_path, strip_optimizer, colorstr, print_args, check_file)
 # from yolov5.utils.torch_utils import select_device, time_sync
 # from yolov5.utils.plots import Annotator, colors, save_one_box
-# from utils.segment.general import masks2segments, process_mask, process_mask_native
+# from yolov5.utils.segment.general import masks2segments, process_mask, process_mask_native
 # from trackers.multi_tracker_zoo import create_tracker
 
 import logging
@@ -46,9 +46,8 @@ from YOLOv6.yolov6.utils.events import load_yaml
 from YOLO_utils.dataloaders import LoadImages, LoadStreams
 from YOLO_utils.general import (LOGGER, Profile, check_img_size, scale_boxes, check_requirements, cv2,
                                     check_imshow, xyxy2xywh, increment_path, strip_optimizer, colorstr, print_args, check_file)
-from YOLO_utils.torch_utils import select_device, time_sync
+from YOLO_utils.torch_utils import select_device
 from YOLO_utils.plots import Annotator, colors, save_one_box
-from utils.segment.general import masks2segments, process_mask, process_mask_native
 from trackers.multi_tracker_zoo import create_tracker
 
 

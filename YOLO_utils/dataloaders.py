@@ -18,7 +18,7 @@ import torch
 
 #from utils.augmentations import letterbox
 from YOLOv6.yolov6.data.data_augment import letterbox
-from utils.general import (LOGGER, check_requirements, clean_str, cv2, is_colab, is_kaggle)
+from YOLO_utils.general import (LOGGER, check_requirements, clean_str, cv2, is_colab, is_kaggle)
 
 # Parameters
 from YOLOv6.yolov6.data.datasets import IMG_FORMATS, VID_FORMATS
