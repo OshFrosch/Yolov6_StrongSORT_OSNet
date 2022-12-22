@@ -2,6 +2,7 @@ import torch.nn as nn
 import torch
 from pathlib import Path
 import numpy as np
+import pandas as pd
 from itertools import islice
 import torchvision.transforms as transforms
 import cv2
@@ -163,7 +164,21 @@ class ReIDDetectMultiBackend(nn.Module):
     @staticmethod
     def model_type(p='path/to/model.pt'):
         # Return model type from model path, i.e. path='path/to/model.onnx' -> type=onnx
-        from export import export_formats
+        def export_formats():
+            # YOLOv5 export formats
+            x = [
+                ['PyTorch', '-', '.pt', True],
+                ['TorchScript', 'torchscript', '.torchscript', True],
+                ['ONNX', 'onnx', '.onnx', True],
+                ['OpenVINO', 'openvino', '_openvino_model', False],
+                ['TensorRT', 'engine', '.engine', True],
+                ['CoreML', 'coreml', '.mlmodel', False],
+                ['TensorFlow SavedModel', 'saved_model', '_saved_model', True],
+                ['TensorFlow GraphDef', 'pb', '.pb', True],
+                ['TensorFlow Lite', 'tflite', '.tflite', False],
+                ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False],
+                ['TensorFlow.js', 'tfjs', '_web_model', False],]
+            return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'GPU'])
         sf = list(export_formats().Suffix)  # export suffixes
         check_suffix(p, sf)  # checks
         types = [s in Path(p).name for s in sf]
