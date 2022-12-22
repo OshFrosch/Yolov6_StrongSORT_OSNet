@@ -52,7 +52,7 @@ from YOLO_utils.plots import Annotator, colors, save_one_box
 from trackers.multi_tracker_zoo import create_tracker
 
 
-#TODO: what about the Yaml file? Do we need to import it?
+#TODO: Fix the import problem where reid_multibackend is importing all this export stuff. How did yolov6_track do it?
 #TODO: auto download weights if they are not found like for yolov5 and osnet in the WEIGHTS folder
 
 
@@ -176,7 +176,6 @@ def run(
             #     pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det, nm=32) #TODO: same as yolov5?
             # else:
             pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
-            
 
 #------------------------------------------------------------------------------------------------------------------------------
         # Process detections
@@ -323,9 +322,9 @@ def run(
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--yolo-weights', nargs='+', type=Path, default=WEIGHTS / 'yolov5s-seg.pt', help='model.pt path(s)')
+    parser.add_argument('--yolo-weights', type=str, default=WEIGHTS / 'yolov5s-seg.pt', help='model.pt path(s)')
     parser.add_argument('--reid-weights', type=Path, default=WEIGHTS / 'osnet_x0_25_msmt17.pt')
-    parser.add_argument('--yolo-cfg', type=Path, default=YAML / 'data.yaml', help='data.yaml path')
+    parser.add_argument('--yolo-cfg', type=str, default=YAML / 'data.yaml', help='data.yaml path')
     parser.add_argument('--tracking-method', type=str, default='strongsort', help='strongsort, ocsort, bytetrack')
     parser.add_argument('--source', type=str, default='0', help='file/dir/URL/glob, 0 for webcam')  
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')

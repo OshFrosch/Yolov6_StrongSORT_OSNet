@@ -14,6 +14,8 @@ val_utils/
 
 #
 examples/
+yaml/
+weights/
 
 # exports
 *_openvino_model
@@ -21,3 +23,6 @@ examples/
 *.pt
 *.onnx
 *.engine
+
+#
+Ch4_cam11_1_640.mp4
