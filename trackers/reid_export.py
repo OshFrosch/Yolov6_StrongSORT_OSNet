@@ -32,9 +32,8 @@ if str(ROOT / 'yolov5') not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 import logging
-from yolov5.utils.torch_utils import select_device
-from yolov5.models.common import DetectMultiBackend
-from yolov5.utils.general import LOGGER, colorstr, check_requirements, check_version
+from YOLO_utils.torch_utils import select_device
+from YOLO_utils.general import LOGGER, colorstr, check_requirements, check_version
 from trackers.strong_sort.deep.models import build_model
 from trackers.strong_sort.deep.reid_model_factory import get_model_name, load_pretrained_weights
 
