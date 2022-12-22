@@ -6,7 +6,7 @@ import copy
 import torch
 import torch.nn.functional as F
 
-from yolov5.utils.general import xywh2xyxy, xyxy2xywh
+from  YOLO_utils.general import xywh2xyxy, xyxy2xywh
 
 
 from trackers.bytetrack.kalman_filter import KalmanFilter
