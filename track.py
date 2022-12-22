@@ -18,6 +18,7 @@ import torch.backends.cudnn as cudnn
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # yolov6 strongsort root directory
 WEIGHTS = ROOT / 'weights'
+YAML = ROOT / 'yaml'
 
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
@@ -51,9 +52,7 @@ from YOLO_utils.plots import Annotator, colors, save_one_box
 from trackers.multi_tracker_zoo import create_tracker
 
 
-#TODO: go through this file and check if there are any other functions that need to be imported from yolov6 (which are more hidden)
 #TODO: what about the Yaml file? Do we need to import it?
-#TODO: use variables like half, since those are not defalut input for the model like in yolov5
 #TODO: auto download weights if they are not found like for yolov5 and osnet in the WEIGHTS folder
 
 
@@ -62,7 +61,8 @@ def run(
         source='0',
         yolo_weights=WEIGHTS / 'yolov5m.pt',  # model.pt path(s),
         reid_weights=WEIGHTS / 'osnet_x0_25_msmt17.pt',  # model.pt path,
-        tracking_method='strongsort',
+        yolo_cfg=YAML / 'data.yaml',  # model.yaml path,
+        tracking_method='strongsort', # like strongsort, bytetrack
         imgsz=(640, 640),  # inference size (height, width)
         conf_thres=0.25,  # confidence threshold
         iou_thres=0.45,  # NMS IOU threshold
@@ -123,7 +123,7 @@ def run(
         model.model.float()  # to FP32
         half = False
     # stride, names, pt = model.stride, model.names, model.pt
-    stride, names, pt = model.stride, load_yaml(yolov6_yaml)['names'], True #TODO: What would pt be in the case of yolov5? #TODO: adjust arguments
+    stride, names, pt = model.stride, load_yaml(yolo_cfg)['names'], True #TODO: What would pt be in the case of yolov5? #TODO: adjust arguments
     imgsz = check_img_size(imgsz, s=stride)  # check image size with method taken from yolov6 Inferer class
 
     # Dataloader
@@ -325,6 +325,7 @@ def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--yolo-weights', nargs='+', type=Path, default=WEIGHTS / 'yolov5s-seg.pt', help='model.pt path(s)')
     parser.add_argument('--reid-weights', type=Path, default=WEIGHTS / 'osnet_x0_25_msmt17.pt')
+    parser.add_argument('--yaml', type=Path, default=YAML / 'data.yaml', help='data.yaml path')
     parser.add_argument('--tracking-method', type=str, default='strongsort', help='strongsort, ocsort, bytetrack')
     parser.add_argument('--source', type=str, default='0', help='file/dir/URL/glob, 0 for webcam')  
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
