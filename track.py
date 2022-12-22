@@ -115,7 +115,7 @@ def run(
 
     # Load model
     device = select_device(device) # cuda:0 will be passed
-    is_seg = '-seg' in str(yolo_weights) # TODO: remove all -seg support
+    # is_seg = '-seg' in str(yolo_weights) # TODO: remove all -seg support
     # model = DetectMultiBackend(yolo_weights, device=device, dnn=dnn, data=None, fp16=half)
     model = DetectBackend(yolo_weights, device=device, dnn=dnn) # load FP32 model
     if half and device.type != 'cpu':
@@ -213,24 +213,24 @@ def run(
                     tracker_list[i].tracker.camera_update(prev_frames[i], curr_frames[i])
 
             if det is not None and len(det):
-                if is_seg:
-                    # scale bbox first the crop masks
-                    if retina_masks:
-                        det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
-                        masks = process_mask_native(proto[i], det[:, 6:], det[:, :4], im0.shape[:2])  # HWC
-                    else:
-                        masks = process_mask(proto[i], det[:, 6:], det[:, :4], im.shape[2:], upsample=True)  # HWC
-                        det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
+                # if is_seg:
+                #     # scale bbox first the crop masks
+                #     if retina_masks:
+                #         det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
+                #         masks = process_mask_native(proto[i], det[:, 6:], det[:, :4], im0.shape[:2])  # HWC
+                #     else:
+                #         masks = process_mask(proto[i], det[:, 6:], det[:, :4], im.shape[2:], upsample=True)  # HWC
+                #         det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
                         
-                    # Mask plotting
-                    annotator.masks(
-                        masks,
-                        colors=[colors(x, True) for x in det[:, 5]],
-                        im_gpu=torch.as_tensor(im0, dtype=torch.float16).to(device).permute(2, 0, 1).flip(0).contiguous() /
-                        255 if retina_masks else im[i]
-                    )
-                else:
-                    det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
+                #     # Mask plotting
+                #     annotator.masks(
+                #         masks,
+                #         colors=[colors(x, True) for x in det[:, 5]],
+                #         im_gpu=torch.as_tensor(im0, dtype=torch.float16).to(device).permute(2, 0, 1).flip(0).contiguous() /
+                #         255 if retina_masks else im[i]
+                #     )
+                # else:
+                det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
 
                 # Print results
                 for c in det[:, 5].unique():
