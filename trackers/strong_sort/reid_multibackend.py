@@ -177,8 +177,10 @@ class ReIDDetectMultiBackend(nn.Module):
                 ['TensorFlow GraphDef', 'pb', '.pb', True],
                 ['TensorFlow Lite', 'tflite', '.tflite', False],
                 ['TensorFlow Edge TPU', 'edgetpu', '_edgetpu.tflite', False],
-                ['TensorFlow.js', 'tfjs', '_web_model', False],]
+                ['TensorFlow.js', 'tfjs', '_web_model', False],
+                ['PaddlePaddle', 'paddle', '_paddle_model', True, True],]
             return pd.DataFrame(x, columns=['Format', 'Argument', 'Suffix', 'GPU'])
+
         sf = list(export_formats().Suffix)  # export suffixes
         check_suffix(p, sf)  # checks
         types = [s in Path(p).name for s in sf]
