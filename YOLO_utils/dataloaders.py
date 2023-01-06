@@ -21,8 +21,8 @@ from YOLOv6.yolov6.data.data_augment import letterbox
 from YOLO_utils.general import (LOGGER, check_requirements, clean_str, cv2, is_colab, is_kaggle)
 
 # Parameters
-from YOLOv6.yolov6.data.datasets import IMG_FORMATS, VID_FORMATS
-
+IMG_FORMATS = "bmp", "jpg", "jpeg", "png", "tif", "tiff", "dng", "webp", "mpo"
+VID_FORMATS = "mp4", "mov", "avi", "mkv"
 
 class LoadImages:
     # YOLOv5 image/video dataloader, i.e. `python detect.py --source image.jpg/vid.mp4`

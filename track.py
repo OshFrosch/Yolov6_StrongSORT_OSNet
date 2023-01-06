@@ -42,10 +42,10 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 import logging
 from YOLOv6.yolov6.layers.common import DetectBackend
-from YOLOv6.yolov6.data.datasets import VID_FORMATS
+# from YOLOv6.yolov6.data.datasets import VID_FORMATS
 from YOLOv6.yolov6.utils.nms import non_max_suppression
 from YOLOv6.yolov6.utils.events import load_yaml
-from YOLO_utils.dataloaders import LoadImages, LoadStreams
+from YOLO_utils.dataloaders import VID_FORMATS, LoadImages, LoadStreams
 from YOLO_utils.general import (LOGGER, Profile, check_img_size, scale_boxes, check_requirements, cv2,
                                     check_imshow, xyxy2xywh, increment_path, strip_optimizer, colorstr, print_args, check_file)
 from YOLO_utils.torch_utils import select_device
