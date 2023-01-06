@@ -1,4 +1,5 @@
 import argparse
+# python track.py --source Ch4_cam11_1_640.mp4 --yolo-weights weights/yolov6hit_edeka_small.pt --yolo-cfg yaml/hit_edeka_detection_small.yaml --classes 0 --save-txt --save-vid
 
 import os
 # limit the number of cpus used by high performance libraries
