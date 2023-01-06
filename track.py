@@ -117,14 +117,14 @@ def run(
     device = select_device(device) # cuda:0 will be passed
     # is_seg = '-seg' in str(yolo_weights) # TODO: remove all -seg support
     # model = DetectMultiBackend(yolo_weights, device=device, dnn=dnn, data=None, fp16=half)
-    model = DetectBackend(yolo_weights, device=device, dnn=dnn) # load FP32 model
+    model = DetectBackend(str(yolo_weights), device=device, dnn=dnn) # load FP32 model
     if half and device.type != 'cpu':
         model.model.half()  # to FP16
     else:
         model.model.float()  # to FP32
         half = False
     # stride, names, pt = model.stride, model.names, model.pt
-    stride, names, pt = model.stride, load_yaml(yolo_cfg)['names'], True #TODO: What would pt be in the case of yolov5? #TODO: adjust arguments
+    stride, names, pt = model.stride, load_yaml(str(yolo_cfg))['names'], True #TODO: What would pt be in the case of yolov5? #TODO: adjust arguments
     imgsz = check_img_size(imgsz, s=stride)  # check image size with method taken from yolov6 Inferer class
 
     # Dataloader
@@ -323,9 +323,9 @@ def run(
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--yolo-weights', type=str, default=WEIGHTS / 'yolov5s-seg.pt', help='model.pt path(s)')
+    parser.add_argument('--yolo-weights', type=Path, default=WEIGHTS / 'yolov5s-seg.pt', help='model.pt path(s)')
     parser.add_argument('--reid-weights', type=Path, default=WEIGHTS / 'osnet_x0_25_msmt17.pt')
-    parser.add_argument('--yolo-cfg', type=str, default=YAML / 'data.yaml', help='data.yaml path')
+    parser.add_argument('--yolo-cfg', type=Path, default=YAML / 'data.yaml', help='data.yaml path')
     parser.add_argument('--tracking-method', type=str, default='strongsort', help='strongsort, ocsort, bytetrack')
     parser.add_argument('--source', type=str, default='0', help='file/dir/URL/glob, 0 for webcam')  
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
