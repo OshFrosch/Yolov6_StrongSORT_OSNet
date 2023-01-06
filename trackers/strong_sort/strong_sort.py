@@ -39,6 +39,8 @@ class StrongSORT(object):
             metric, max_iou_distance=max_iou_distance, max_age=max_age, n_init=n_init, max_unmatched_preds=max_unmatched_preds)
 
     def update(self, dets,  ori_img):
+
+        print("#######Shape:  ",dets.shape, dets.type())
         
         xyxys = dets[:, 0:4]
         confs = dets[:, 4]
@@ -76,7 +78,7 @@ class StrongSORT(object):
             class_id = track.class_id
             conf = track.conf
             queue = track.q
-            outputs.append(np.array([x1, y1, x2, y2, track_id, class_id, conf, queue]))
+            outputs.append(np.array([x1, y1, x2, y2, track_id, class_id, conf]))#, queue])) #TODO: Why the hack is queue breaking numpy? What ze fuk?
         if len(outputs) > 0:
             outputs = np.stack(outputs, axis=0)
         return outputs
