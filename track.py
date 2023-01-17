@@ -1,7 +1,7 @@
-import argparse
-# python track.py --source Ch4_cam11_1_640.mp4 --yolo-weights weights/yolov6hit_edeka_small.pt --yolo-cfg yaml/hit_edeka_detection_small.yaml --classes 0 --save-txt --save-vid
+# python track.py --source track.mp4 --yolo-weights weights/yolov6edeka_small.pt --yolo-cfg yaml/edeka_detection_small.yaml --classes 0 --save-txt --save-vid
 
 import os
+import argparse
 # limit the number of cpus used by high performance libraries
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -30,16 +30,6 @@ if str(ROOT / 'trackers' / 'strong_sort') not in sys.path:
 
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-# import logging
-# from yolov5.models.common import DetectMultiBackend
-# from yolov5.utils.dataloaders import VID_FORMATS, LoadImages, LoadStreams
-# from yolov5.utils.general import (LOGGER, Profile, check_img_size, non_max_suppression, scale_boxes, check_requirements, cv2,
-#                                   check_imshow, xyxy2xywh, increment_path, strip_optimizer, colorstr, print_args, check_file)
-# from yolov5.utils.torch_utils import select_device, time_sync
-# from yolov5.utils.plots import Annotator, colors, save_one_box
-# from yolov5.utils.segment.general import masks2segments, process_mask, process_mask_native
-# from trackers.multi_tracker_zoo import create_tracker
-
 import logging
 from YOLOv6.yolov6.layers.common import DetectBackend
 # from YOLOv6.yolov6.data.datasets import VID_FORMATS
@@ -47,20 +37,20 @@ from YOLOv6.yolov6.utils.nms import non_max_suppression
 from YOLOv6.yolov6.utils.events import load_yaml
 from YOLO_utils.dataloaders import VID_FORMATS, LoadImages, LoadStreams
 from YOLO_utils.general import (LOGGER, Profile, check_img_size, scale_boxes, check_requirements, cv2,
-                                    check_imshow, xyxy2xywh, increment_path, strip_optimizer, colorstr, print_args, check_file)
+                                    check_imshow, increment_path, strip_optimizer, colorstr, print_args, check_file)
 from YOLO_utils.torch_utils import select_device
 from YOLO_utils.plots import Annotator, colors, save_one_box
 from trackers.multi_tracker_zoo import create_tracker
 
 
-#TODO: Fix the import problem where reid_multibackend is importing all this export stuff. How did yolov6_track do it?
 #TODO: auto download weights if they are not found like for yolov5 and osnet in the WEIGHTS folder
+#TODO: remove even more logic from the run function
 
 
 @torch.no_grad()
 def run(
         source='0',
-        yolo_weights=WEIGHTS / 'yolov5m.pt',  # model.pt path(s),
+        yolo_weights=WEIGHTS / 'yolov6s.pt',  # model.pt path(s),
         reid_weights=WEIGHTS / 'osnet_x0_25_msmt17.pt',  # model.pt path,
         yolo_cfg=YAML / 'data.yaml',  # model.yaml path,
         tracking_method='strongsort', # like strongsort, bytetrack
@@ -95,7 +85,6 @@ def run(
 ):
 
     source = str(source) # convert to string
-    # old: save_img = not nosave and not source.endswith('.txt')  # save inference images # is this even used?
     is_file = Path(source).suffix[1:] in (VID_FORMATS)
     is_url = source.lower().startswith(('rtsp://', 'rtmp://', 'http://', 'https://')) # Check if source is a url
     webcam = source.isnumeric() or source.endswith('.txt') or (is_url and not is_file) # Check if source is a webcam
@@ -115,15 +104,12 @@ def run(
 
     # Load model
     device = select_device(device) # cuda:0 will be passed
-    # is_seg = '-seg' in str(yolo_weights) # TODO: remove all -seg support
-    # model = DetectMultiBackend(yolo_weights, device=device, dnn=dnn, data=None, fp16=half)
     model = DetectBackend(str(yolo_weights), device=device, dnn=dnn) # load FP32 model
     if half and device.type != 'cpu':
         model.model.half()  # to FP16
     else:
         model.model.float()  # to FP32
         half = False
-    # stride, names, pt = model.stride, model.names, model.pt
     stride, names, pt = model.stride, load_yaml(str(yolo_cfg))['names'], True #TODO: What would pt be in the case of yolov5? #TODO: adjust arguments
     imgsz = check_img_size(imgsz, s=stride)  # check image size with method taken from yolov6 Inferer class
 
@@ -166,19 +152,12 @@ def run(
         # Inference
         with dt[1]:
             visualize = increment_path(save_dir / Path(path[0]).stem, mkdir=True) if visualize else False #TODO: vis is not used anymore after this, right?
-            # if is_seg:
-            #     pred, proto = model(im, augment=augment, visualize=visualize)[:2] #TODO: remove all -seg support
-            # else:
             pred = model(im) 
 
         # Apply NMS
         with dt[2]:
-            # if is_seg:
-            #     pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det, nm=32) #TODO: same as yolov5?
-            # else:
             pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
 
-#------------------------------------------------------------------------------------------------------------------------------
         # Process detections
         for i, det in enumerate(pred):  # detections per image
             seen += 1
@@ -212,23 +191,6 @@ def run(
                     tracker_list[i].tracker.camera_update(prev_frames[i], curr_frames[i])
 
             if det is not None and len(det):
-                # if is_seg:
-                #     # scale bbox first the crop masks
-                #     if retina_masks:
-                #         det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
-                #         masks = process_mask_native(proto[i], det[:, 6:], det[:, :4], im0.shape[:2])  # HWC
-                #     else:
-                #         masks = process_mask(proto[i], det[:, 6:], det[:, :4], im.shape[2:], upsample=True)  # HWC
-                #         det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
-                        
-                #     # Mask plotting
-                #     annotator.masks(
-                #         masks,
-                #         colors=[colors(x, True) for x in det[:, 5]],
-                #         im_gpu=torch.as_tensor(im0, dtype=torch.float16).to(device).permute(2, 0, 1).flip(0).contiguous() /
-                #         255 if retina_masks else im[i]
-                #     )
-                # else:
                 det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()  # rescale boxes to im0 size
 
                 # Print results
@@ -269,7 +231,7 @@ def run(
                             annotator.box_label(bboxes, label, color=color)
 
                             if save_trajectories and tracking_method == 'strongsort':
-                                q = output[7]
+                                q = output[7] # This is currently broken since we do not pass the q's to the tracker
                                 tracker_list[i].trajectory(im0, q, color=color)
                             if save_crop:
                                 txt_file_name = txt_file_name if (isinstance(path, list) and len(path) > 1) else ''
@@ -277,7 +239,6 @@ def run(
                 
             else:
                 pass
-                #tracker_list[i].tracker.pred_n_update_all_tracks()
                 
             # Stream results
             im0 = annotator.result()
